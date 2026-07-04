@@ -1,0 +1,447 @@
+﻿<Window x:Class="BookmarkManager.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="标签页收藏管理器" Height="700" Width="1050"
+        MinHeight="500" MinWidth="800"
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="None"
+        Background="{DynamicResource WindowBackground}"
+        Foreground="{DynamicResource TextPrimaryBrush}"
+        Icon="app.ico"
+        ResizeMode="NoResize">
+
+    <Window.InputBindings>
+        <KeyBinding Key="N" Modifiers="Ctrl" Command="{Binding AddBookmarkCommand}"/>
+        <KeyBinding Key="F" Modifiers="Ctrl" Command="{Binding FocusSearchCommand}"/>
+        <KeyBinding Key="N" Modifiers="Ctrl+Shift" Command="{Binding AddCategoryCommand}"/>
+        <KeyBinding Key="D" Modifiers="Ctrl" Command="{Binding ToggleDarkModeCommand}"/>
+        <KeyBinding Key="E" Modifiers="Ctrl" Command="{Binding ExportCommand}"/>
+        <KeyBinding Key="I" Modifiers="Ctrl" Command="{Binding ImportCommand}"/>
+    </Window.InputBindings>
+
+    <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="36"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+        <!-- Custom Title Bar -->
+        <Grid Grid.Row="0" Background="{DynamicResource HeaderBackground}"
+              MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Column="0" Text="🔖  标签页收藏管理器" FontSize="12"
+                       VerticalAlignment="Center" Margin="12,0,0,0"
+                       Foreground="{DynamicResource TextPrimaryBrush}"/>
+
+            <!-- Window Control Buttons -->
+            <StackPanel Grid.Column="2" Orientation="Horizontal">
+                <Button x:Name="MinimizeBtn" Content="─" Click="MinimizeBtn_Click"
+                        Width="46" Height="36" FontSize="14"
+                        Foreground="{DynamicResource TextPrimaryBrush}"
+                        Cursor="Hand" Focusable="True">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="border" Background="Transparent" Padding="0">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="border" Property="Background" Value="#20000000"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="border" Property="Background" Value="#30000000"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+                <Button x:Name="MaximizeBtn" Content="☐" Click="MaximizeBtn_Click"
+                        Width="46" Height="36" FontSize="14"
+                        Foreground="{DynamicResource TextPrimaryBrush}"
+                        Cursor="Hand" Focusable="True">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="border" Background="Transparent" Padding="0">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="border" Property="Background" Value="{DynamicResource PrimaryBrush}"/>
+                                    <Setter Property="Foreground" Value="White"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="border" Property="Background" Value="{DynamicResource PrimaryHoverBrush}"/>
+                                    <Setter Property="Foreground" Value="White"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+                <Button x:Name="CloseBtn" Content="✕" Click="CloseBtn_Click"
+                        Width="46" Height="36" FontSize="14"
+                        Foreground="{DynamicResource TextPrimaryBrush}"
+                        Cursor="Hand" Focusable="True">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="border" Background="Transparent" Padding="0">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="border" Property="Background" Value="{DynamicResource DangerBrush}"/>
+                                    <Setter Property="Foreground" Value="White"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="border" Property="Background" Value="#D32F2F"/>
+                                    <Setter Property="Foreground" Value="White"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <!-- Main Content -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="220" MinWidth="180"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Left Sidebar: Categories -->
+            <Border Grid.Column="0" Background="{DynamicResource SidebarBackground}"
+                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="🔖 收藏管理器" FontSize="16" FontWeight="Bold"
+                               Margin="16,16,16,12" Foreground="{DynamicResource TextPrimaryBrush}"/>
+
+                    <Grid Grid.Row="1">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- 全部分类 -->
+                        <Border x:Name="AllCategoryItem" Grid.Row="0" Padding="12,8" CornerRadius="6" Margin="8,2"
+                                Background="{DynamicResource ItemSelectedBrush}" Cursor="Hand"
+                                MouseLeftButtonDown="AllCategory_Click"
+                                MouseEnter="AllCategoryItem_MouseEnter"
+                                MouseLeave="AllCategoryItem_MouseLeave">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="📋" FontSize="16" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Grid.Column="1" Text="全部" FontSize="13"
+                                           Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+
+                        <ListBox Grid.Row="1" x:Name="CategoryListBox"
+                                 ItemsSource="{Binding Categories}"
+                                 Background="Transparent" BorderThickness="0"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                 SelectionChanged="CategoryListBox_SelectionChanged">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Padding="12,8" CornerRadius="6" Margin="8,2"
+                                            Background="Transparent">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="{Binding Icon}" FontSize="16" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Name}" FontSize="13"
+                                                       Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center"/>
+                                            <Button Grid.Column="2" Content="⋮" FontSize="14" Background="Transparent"
+                                                    BorderThickness="0" Foreground="{DynamicResource TextSecondaryBrush}"
+                                                    Cursor="Hand" Padding="4,2"
+                                                    Tag="{Binding}"
+                                                    Click="CategoryMenu_Click"
+                                                    ToolTip="分类选项"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="ListBoxItem">
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="ListBoxItem">
+                                                <Border x:Name="Bd" Background="Transparent"
+                                                        Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ItemHoverBrush}"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsSelected" Value="True">
+                                                        <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ItemSelectedBrush}"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </ListBox.ItemContainerStyle>
+                        </ListBox>
+                    </Grid>
+
+                    <Border Grid.Row="2" Padding="8" BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="0,1,0,0">
+                        <Button Content="+ 新建分类" Command="{Binding AddCategoryCommand}"
+                                HorizontalAlignment="Stretch" Padding="12,8"
+                                Background="Transparent" BorderThickness="0"
+                                Foreground="{DynamicResource PrimaryBrush}" FontSize="13"
+                                HorizontalContentAlignment="Left" Cursor="Hand">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource ItemHoverBrush}"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </Border>
+
+                    <Grid Grid.Row="3" Margin="0,0,0,8">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Text="标签" FontSize="12" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextSecondaryBrush}" Margin="16,8,16,4"/>
+                        <ItemsControl Grid.Row="1" ItemsSource="{Binding Tags}" Margin="12,0">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Padding="6,3" CornerRadius="10" Margin="2,2"
+                                            Background="{DynamicResource TagBrush}" Cursor="Hand"
+                                            MouseLeftButtonDown="Tag_Click" Tag="{Binding Id}">
+                                        <TextBlock Text="{Binding Name}" FontSize="11"
+                                                   Foreground="{DynamicResource TagTextBrush}"/>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <GridSplitter Grid.Column="1" Width="1" Background="{DynamicResource BorderBrush}"
+                          HorizontalAlignment="Center" VerticalAlignment="Stretch"/>
+
+            <!-- Right Content -->
+            <Grid Grid.Column="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Border Grid.Row="0" Padding="16,12" Background="{DynamicResource HeaderBackground}"
+                        BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Border Grid.Column="0" CornerRadius="6" Background="{DynamicResource SearchBoxBackground}"
+                                Padding="8,0" Margin="0,0,12,0">
+                            <Grid>
+                                <TextBlock Text="🔍" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                <TextBox x:Name="SearchBox" Text="{Binding SearchKeyword, UpdateSourceTrigger=PropertyChanged}"
+                                         VerticalAlignment="Center" Background="Transparent" BorderThickness="0"
+                                         FontSize="13" Margin="24,0,30,0" Foreground="{DynamicResource TextPrimaryBrush}"
+                                         CaretBrush="{DynamicResource TextPrimaryBrush}"
+                                         TextChanged="SearchBox_TextChanged"
+                                         KeyDown="SearchBox_KeyDown"/>
+                                <Button x:Name="ClearSearchBtn" Content="✕" FontSize="12"
+                                        VerticalAlignment="Center" HorizontalAlignment="Right"
+                                        Background="Transparent" BorderThickness="0"
+                                        Foreground="{DynamicResource TextSecondaryBrush}"
+                                        Cursor="Hand" Padding="4,2"
+                                        Visibility="Collapsed"
+                                        Click="ClearSearch_Click"/>
+                            </Grid>
+                        </Border>
+
+                        <Grid Grid.Column="1" Margin="0,0,16,0">
+                            <Border x:Name="TagFilterIndicator" CornerRadius="10" Padding="8,4"
+                                    Background="{DynamicResource PrimaryBrush}" Visibility="Collapsed">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock x:Name="TagFilterText" Text="" FontSize="12" Foreground="White"/>
+                                    <Button Content="✕" FontSize="11" Background="Transparent" BorderThickness="0"
+                                            Foreground="White" Cursor="Hand" Padding="4,0,0,0" Click="ClearTagFilter_Click"/>
+                                </StackPanel>
+                            </Border>
+                            <TextBlock x:Name="TitleText"
+                                       Text="全部书签" FontSize="15" FontWeight="SemiBold"
+                                       VerticalAlignment="Center" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        </Grid>
+
+                        <Button Grid.Column="2" Content="📥 导入" Command="{Binding ImportCommand}"
+                                Padding="8,6" FontSize="12" Cursor="Hand"
+                                Background="Transparent" BorderThickness="1"
+                                BorderBrush="{DynamicResource BorderBrush}"
+                                Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,6,0"/>
+
+                        <Button Grid.Column="3" Content="📤 导出" Command="{Binding ExportCommand}"
+                                Padding="8,6" FontSize="12" Cursor="Hand"
+                                Background="Transparent" BorderThickness="1"
+                                BorderBrush="{DynamicResource BorderBrush}"
+                                Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,6,0"/>
+
+                        <Button Grid.Column="4" x:Name="DarkModeBtn" Padding="8,6" FontSize="12"
+                                Cursor="Hand" Background="Transparent" BorderThickness="1"
+                                BorderBrush="{DynamicResource BorderBrush}"
+                                Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,6,0"
+                                Click="DarkModeBtn_Click" ToolTip="切换深色模式 (Ctrl+D)"/>
+
+                        <Button Grid.Column="5" Content="＋ 添加书签" Command="{Binding AddBookmarkCommand}"
+                                Padding="12,6" FontSize="13" Cursor="Hand"
+                                Background="{DynamicResource PrimaryBrush}" BorderThickness="0"
+                                Foreground="White" FontWeight="SemiBold"/>
+                    </Grid>
+                </Border>
+
+                <ListBox Grid.Row="1" x:Name="BookmarkListBox"
+                         ItemsSource="{Binding Bookmarks}"
+                         Background="Transparent" BorderThickness="0"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         SelectionMode="Single"
+                         MouseDoubleClick="BookmarkListBox_MouseDoubleClick"
+                         KeyDown="BookmarkListBox_KeyDown"
+                         AllowDrop="True" Drop="BookmarkListBox_Drop"
+                         DragOver="BookmarkListBox_DragOver"
+                         ItemContainerStyle="{DynamicResource BookmarkItemStyle}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Border Padding="16,12" Margin="8,4" CornerRadius="8"
+                                    Background="{DynamicResource CardBackground}"
+                                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                                    Cursor="Hand">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="{DynamicResource CardBackground}"/>
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="{DynamicResource ItemHoverBrush}"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <Grid Grid.Row="0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                            <TextBlock Text="🔗" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <TextBlock Text="{Binding Title}" FontSize="14" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                                       TextTrimming="CharacterEllipsis" MaxWidth="500"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                            <Button Content="🔗" FontSize="12" Padding="6,4"
+                                                    Background="Transparent" BorderThickness="0"
+                                                    Foreground="{DynamicResource TextSecondaryBrush}"
+                                                    Cursor="Hand" ToolTip="复制链接"
+                                                    Click="CopyUrl_Click" Tag="{Binding Url}"/>
+                                            <Button Content="🌐" FontSize="12" Padding="6,4"
+                                                    Background="Transparent" BorderThickness="0"
+                                                    Foreground="{DynamicResource PrimaryBrush}"
+                                                    Cursor="Hand" ToolTip="打开链接"
+                                                    Click="OpenUrl_Click" Tag="{Binding}"/>
+                                            <Button Content="✏️" FontSize="12" Padding="6,4"
+                                                    Background="Transparent" BorderThickness="0"
+                                                    Foreground="{DynamicResource TextSecondaryBrush}"
+                                                    Cursor="Hand" ToolTip="编辑"
+                                                    Click="EditBookmark_Click" Tag="{Binding}"/>
+                                            <Button Content="🗑" FontSize="12" Padding="6,4"
+                                                    Background="Transparent" BorderThickness="0"
+                                                    Foreground="{DynamicResource DangerBrush}"
+                                                    Cursor="Hand" ToolTip="删除"
+                                                    Click="DeleteBookmark_Click" Tag="{Binding}"/>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <TextBlock Grid.Row="1" Text="{Binding Url}" FontSize="11"
+                                               Foreground="{DynamicResource PrimaryBrush}"
+                                               TextTrimming="CharacterEllipsis" Margin="0,4,0,0"
+                                               Cursor="Hand" MouseLeftButtonDown="Url_Click" Tag="{Binding Url}"/>
+
+                                    <Grid Grid.Row="2" Margin="0,6,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="{Binding Description}" FontSize="11"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                                   TextTrimming="CharacterEllipsis" MaxWidth="500"
+                                                   Visibility="{Binding Description, Converter={StaticResource StringToVisibilityConverter}}"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding DisplayTags}" FontSize="11"
+                                                   Foreground="{DynamicResource TagTextBrush}"/>
+                                    </Grid>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <TextBlock Grid.Row="1" x:Name="EmptyState"
+                           Text="📭 暂无书签&#10;点击「＋ 添加书签」或按 Ctrl+N 添加" FontSize="14"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                           TextAlignment="Center" LineHeight="24"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
+                           Visibility="Collapsed"/>
+
+                <Border Grid.Row="2" Padding="16,6" Background="{DynamicResource StatusBarBackground}"
+                        BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0">
+                    <TextBlock Text="{Binding StatusMessage}" FontSize="12"
+                               Foreground="{DynamicResource TextSecondaryBrush}"/>
+                </Border>
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>
